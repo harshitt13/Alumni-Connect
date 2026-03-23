@@ -25,11 +25,25 @@ jobs:
         with:
           channel: 'stable'
 
+      # --- START OF SECRET INJECTION STEPS ---
+      
+      # (Optional) Uncomment the two lines below if you added an ENV_FILE secret
+      # - name: Inject Environment Variables
+      #   run: echo "${{ secrets.ENV_FILE }}" > .env
+
       - name: Decode Google Services JSON
-        # This step safely injects your Firebase config into the build environment
+        # This step safely injects your Android Firebase config
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: echo $GOOGLE_SERVICES_JSON | base64 -d > android/app/google-services.json
+
+      - name: Decode Firebase Options
+        # This step safely injects your Dart Firebase configuration
+        env:
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+        run: echo $FIREBASE_OPTIONS_DART | base64 -d > lib/firebase_options.dart
+
+      # --- END OF SECRET INJECTION STEPS ---
 
       - name: Install Dependencies
         run: flutter pub get
