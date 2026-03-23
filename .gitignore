@@ -1,0 +1,111 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Firebase
+**/google-services.json
+**/GoogleService-Info.plist
+.firebase/
+.firebaserc
+firebase-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+
+# IDEs
+.vscode/
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+*.code-workspace
+
+# Local file-based database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS files
+Thumbs.db
+.directory
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*~
+
+# Build outputs
+.dist/
+dist/
+build/
+
+# Analysis
+analysis_output.txt
+analyze.txt
+analyze_final.txt
+post_fix_analysis.txt
+
+# Node modules (if using Firebase CLI)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Misc generated files
+generated_plugin_registrant.dart
+*.g.dart
+*.config.dart
