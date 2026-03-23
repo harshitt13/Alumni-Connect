@@ -11,7 +11,6 @@ A premium, feature-rich Alumni networking mobile application built with **Flutte
   - [Features](#features)
     - [User Features](#user-features)
     - [Admin Features](#admin-features)
-    - [Notifications System](#notifications-system)
   - [Architecture](#architecture)
   - [Authentication Flow](#authentication-flow)
     - [Registration Flow](#registration-flow)
@@ -69,16 +68,6 @@ A premium, feature-rich Alumni networking mobile application built with **Flutte
 | **Manage Alumni** | Add new alumni via dialog, delete with confirmation — all synced to Firestore |
 | **Manage Events** | Add new events via dialog, delete with confirmation — all synced to Firestore |
 | **Role-Based Routing** | `admin@admin.com` auto-routes to the admin panel |
-
-### Notifications System
-| Feature | Description |
-|---|---|
-| **Real-Time Notifications** | Firebase Firestore streams for instant notification updates |
-| **Notification Types** | Support for message, event, alert, and system notifications |
-| **Mark as Read** | Individual or bulk-mark notifications as read |
-| **Color-Coded Icons** | Different notification types displayed with distinct colors and icons |
-| **Timestamp Formatting** | Human-readable relative timestamps (just now, 1h ago, etc.) |
-| **Notification Routing** | Tap notifications to navigate to related content (messages, events) |
 
 ---
 
