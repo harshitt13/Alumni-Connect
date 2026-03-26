@@ -106,6 +106,38 @@ Business Logic Layer (Authentication, Data Operations)
 Data Access Layer (Firebase / Mock Data)
 ```
 
+### Architecture Diagram
+
+```mermaid
+flowchart TD
+    A[Flutter App Entry<br/>main.dart] --> B[Splash and Onboarding]
+    B --> C{Auto Login Check}
+    C -->|Admin| D[Admin Navigation]
+    C -->|User| E[Main Navigation]
+    C -->|No Session| F[Login and Registration]
+
+    D --> G[Admin Screens<br/>Dashboard, Manage Alumni, Manage Events]
+    E --> H[User Screens<br/>Home, Directory, Events, Profile, Chat]
+    F --> I[Firebase Auth]
+    I --> C
+
+    G --> J[AppProvider<br/>ChangeNotifier State]
+    H --> J
+
+    J --> K[Business Logic<br/>Auth, CRUD, Unread Counts, Notifications]
+    K --> L[Cloud Firestore]
+    K --> M[Firebase Auth]
+    K --> N[SharedPreferences<br/>Onboarding Flag]
+
+    L --> O[Real-time Streams<br/>Chats and Notifications]
+    O --> H
+    O --> G
+
+    P[MockData Fallback] --> J
+```
+
+This architecture combines declarative UI, provider-based state management, and Firebase real-time data flow, with role-based routing for admin and alumni users.
+
 Core Components:
 
 - Presentation Layer: All screen widgets and UI components under lib/screens/
