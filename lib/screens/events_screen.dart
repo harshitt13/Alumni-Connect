@@ -108,7 +108,7 @@ class _EventCardState extends State<_EventCard> {
                           
                           await FirebaseFirestore.instance.collection('chats').doc(chatId).collection('messages').add({
                             'text': 'I have RSVP\'d for the event: ${event.title}',
-                            'senderEmail': provider.currentUser!.email,
+                            'sender': provider.currentUser!.email,
                             'timestamp': FieldValue.serverTimestamp(),
                           });
                         } catch (_) {}

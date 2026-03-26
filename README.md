@@ -197,8 +197,9 @@ android/
 ### Alumni Model
 ```dart
 class AlumniModel {
-  String name;
+  String id;
   String email;
+  String name;
   String profileImageUrl;
   String major;
   int graduationYear;
@@ -208,9 +209,14 @@ class AlumniModel {
 }
 ```
 
+Firestore mapping:
+- `fromMap(Map<String, dynamic> data, String documentId)` sets `id = documentId`
+- `toMap()` writes: `email`, `name`, `profileImageUrl`, `major`, `graduationYear`, `company`, `role`, `cgpa`
+
 ### Event Model
 ```dart
 class EventModel {
+  String id;
   String title;
   String description;
   DateTime date;
@@ -219,9 +225,15 @@ class EventModel {
 }
 ```
 
+Firestore mapping:
+- `fromMap(...)` reads `date` from Firestore `Timestamp` using `.toDate()`
+- `toMap()` writes `date` as `Timestamp.fromDate(date)`
+
 ### Message Model
 ```dart
 class MessageModel {
+  String id;
+  String chatId;
   String sender;
   String senderName;
   String text;
@@ -230,9 +242,14 @@ class MessageModel {
 }
 ```
 
+Firestore mapping:
+- `fromMap(...)` supports `Timestamp`, `DateTime`, and `int` for `timestamp`
+- `toMap()` writes `timestamp` as `Timestamp.fromDate(timestamp)`
+
 ### Notification Model
 ```dart
 class NotificationModel {
+  String id;
   String userId;
   String title;
   String message;
@@ -243,6 +260,10 @@ class NotificationModel {
   Map<String, dynamic>? data;
 }
 ```
+
+Firestore mapping:
+- `fromMap(...)` supports `Timestamp`, `DateTime`, and `int` for `timestamp`
+- `toMap()` writes `timestamp` as `Timestamp.fromDate(timestamp)`
 
 ---
 
@@ -282,6 +303,186 @@ class NotificationModel {
 - Users see badge on home icon
 - Tap badge -> NotificationPanel (draggable bottom sheet)
 - Tap notification -> Navigate based on type (message -> chat, event -> event details)
+
+---
+
+## Step-by-Step Working and Algorithms
+
+This section explains how the app works internally in execution order and documents the key algorithms used in the project.
+
+### 1) App Startup Algorithm
+
+Purpose: Initialize services, load onboarding state, and route user safely.
+
+```text
+START
+1. Ensure Flutter binding is initialized
+2. Initialize Firebase with platform config
+3. Read onboarding_complete from SharedPreferences
+4. Build app with AppProvider (ChangeNotifier)
+5. Show SplashScreen
+6. After splash:
+  a) If onboarding_complete is false -> open OnboardingScreen
+  b) Else -> open RouterApp
+7. RouterApp calls tryAutoLogin()
+8. Route decision:
+  a) ADMIN  -> /admin-home
+  b) USER   -> /home
+  c) null   -> /login
+END
+```
+
+### 2) Authentication and Role Routing Algorithm
+
+Purpose: Authenticate using Firebase Auth and choose admin/user module.
+
+```text
+INPUT: email, password
+
+1. Validate non-empty credentials
+2. Call FirebaseAuth.signInWithEmailAndPassword()
+3. IF email == admin@admin.com:
+  - set isAdmin = true
+  - return ADMIN
+4. ELSE:
+  - set isAdmin = false
+  - map currentUser from alumni list by email
+  - return success (null error)
+5. On FirebaseAuthException:
+  - return readable error message
+```
+
+Time Complexity: O(n) worst-case for locating user in local alumni list.
+
+### 3) Data Loading (Firestore + Mock Fallback) Algorithm
+
+Purpose: Keep app usable even if cloud fetch fails or collections are empty.
+
+```text
+1. Set isLoading = true
+2. Fetch alumni collection
+3. IF alumni docs empty -> use MockData.alumniList
+  ELSE map docs -> AlumniModel list
+4. Fetch events collection
+5. IF events docs empty -> use MockData.eventsList
+  ELSE map docs -> EventModel list
+6. On any error -> use mock alumni + mock events
+7. Set isLoading = false and notify UI listeners
+```
+
+### 4) Alumni Search + Filter Algorithm
+
+Purpose: Search alumni by multiple attributes and apply major filter.
+
+```text
+INPUT: query, selectedMajor
+
+FOR each alumni record s:
+  matchesSearch =
+   s.name contains query OR
+   s.company contains query OR
+   s.major contains query
+
+  matchesFilter =
+   selectedMajor == "All" OR s.major == selectedMajor
+
+  include s IF matchesSearch AND matchesFilter
+
+OUTPUT: filtered list
+```
+
+Time Complexity: O(n) per search refresh.
+
+### 5) One-to-One Chat and Unread Counter Algorithm
+
+Purpose: Maintain consistent chat thread IDs and unread badges.
+
+```text
+Chat ID generation:
+1. Take two participant emails
+2. Convert to lowercase
+3. Sort lexicographically
+4. Join with underscore
+5. Replace non-alphanumeric characters with '_'
+
+Send message:
+1. Insert message into chats/{chatId}/messages
+2. Update chats/{chatId}:
+  - lastMessage
+  - lastTimestamp
+  - participants
+  - unreadCount[recipientEmail] += 1
+
+Read message stream:
+1. Subscribe to chats/{chatId}/messages ordered by timestamp
+2. While opening chat screen, set unreadCount[currentUser] = 0
+```
+
+### 6) Notification System Algorithm
+
+Purpose: Show real-time unread alerts for messages/events and support mark-as-read.
+
+```text
+Create notification(userId, title, message, type, relatedId, data):
+1. Add notification doc with isRead=false and server timestamp
+2. If notification belongs to current session user, refresh unread count
+
+Unread stream:
+1. Query notifications where userId == current user
+2. Filter isRead == false
+3. Order by timestamp desc
+4. Limit 5 for panel preview
+
+Mark one as read:
+1. Update isRead=true for selected notification
+
+Mark all as read:
+1. Query all unread docs for current user
+2. Update each document isRead=true
+```
+
+### 7) Event RSVP Workflow Algorithm
+
+Purpose: Record RSVP intent and notify admin through support chat.
+
+```text
+1. User taps RSVP
+2. Disable RSVP button locally (prevent duplicate taps)
+3. Build admin-user support chatId
+4. Upsert chat metadata in chats/{chatId}
+5. Add RSVP message in chats/{chatId}/messages
+6. Show "RSVP submitted successfully"
+```
+
+### 8) Admin CRUD Algorithms
+
+Purpose: Manage alumni and events centrally from admin panel.
+
+```text
+Add Alumni:
+1. Validate form fields
+2. Optionally create Auth user via temporary Firebase app
+3. Insert alumni document into Firestore
+4. Reload provider data
+
+Update Alumni/Event:
+1. Open edit dialog and collect changed values
+2. Update Firestore doc by id
+3. Reload provider data
+
+Delete Alumni/Event:
+1. Ask for confirmation
+2. Delete document by id
+3. Reload provider data
+```
+
+### 9) Why This Design Works for a Class Project
+
+1. Clear separation of concerns: UI, state, and cloud data layers.
+2. Real-world backend integration: Firebase Auth + Firestore.
+3. Fault tolerance: mock fallback when Firestore is unavailable.
+4. Scalable feature pattern: same provider handles user and admin modules.
+5. Demonstrates core software engineering concepts: routing, state management, async streams, CRUD, and role-based access.
 
 ---
 

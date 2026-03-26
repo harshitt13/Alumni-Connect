@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class NotificationModel {
   final String id;
   final String userId;
@@ -28,13 +30,18 @@ class NotificationModel {
       title: data['title'] ?? '',
       message: data['message'] ?? '',
       type: data['type'] ?? 'system',
-      timestamp: data['timestamp'] != null 
-          ? DateTime.fromMillisecondsSinceEpoch(data['timestamp'].millisecondsSinceEpoch)
-          : DateTime.now(),
+      timestamp: _parseTimestamp(data['timestamp']),
       isRead: data['isRead'] ?? false,
       relatedId: data['relatedId'],
       data: data['data'] as Map<String, dynamic>?,
     );
+  }
+
+  static DateTime _parseTimestamp(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    return DateTime.now();
   }
 
   Map<String, dynamic> toMap() {
@@ -43,7 +50,7 @@ class NotificationModel {
       'title': title,
       'message': message,
       'type': type,
-      'timestamp': timestamp,
+      'timestamp': Timestamp.fromDate(timestamp),
       'isRead': isRead,
       'relatedId': relatedId,
       'data': data,
